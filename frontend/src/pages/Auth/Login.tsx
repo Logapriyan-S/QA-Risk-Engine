@@ -1,17 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-interface LoginProps {
-  onLogin: () => void;
-}
+// 1. Removed the interface LoginProps - we don't need it anymore!
 
 /* ===========================
-    Interactive Background
+   Interactive Background
    =========================== */
 const AntigravityBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouseRef = useRef({ x: -2000, y: -2000 });
-  const rafRef = useRef<number>();
+  const mouseRef = useRef({ x: -100, y: -100 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -19,8 +16,10 @@ const AntigravityBackground: React.FC = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    let animationFrameId: number;
     let particles: Particle[] = [];
-    const COLORS = ["#2563eb", "#7c3aed", "#3b82f6", "#8b5cf6", "#1e293b"];
+    
+    const COLORS = ["#4f46e5", "#818cf8", "#6366f1", "#a5b4fc", "#1e1b4b"];
 
     class Particle {
       x: number;
@@ -39,28 +38,33 @@ const AntigravityBackground: React.FC = () => {
         this.y = y;
         this.baseX = x;
         this.baseY = y;
-        this.size = Math.random() * 1.5 + 0.5;
+        this.size = Math.random() * 2 + 1;
         this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
-        this.friction = 0.92;
-        this.ease = 0.01 + Math.random() * 0.02;
+        this.friction = 0.94;
+        this.ease = 0.05;
       }
 
       update() {
         const dx = this.x - mouseRef.current.x;
         const dy = this.y - mouseRef.current.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const radius = 200;
+        const radius = 150;
 
         if (dist < radius) {
           const strength = 1 - dist / radius;
-          this.vx += (dx / dist) * strength * 2;
-          this.vy += (dy / dist) * strength * 2;
+          const angle = Math.atan2(dy, dx);
+          const force = strength * 8;
+          
+          this.vx += Math.cos(angle) * force;
+          this.vy += Math.sin(angle) * force;
         }
 
         this.vx += (this.baseX - this.x) * this.ease;
         this.vy += (this.baseY - this.y) * this.ease;
+        
         this.vx *= this.friction;
         this.vy *= this.friction;
+        
         this.x += this.vx;
         this.y += this.vy;
       }
@@ -75,13 +79,12 @@ const AntigravityBackground: React.FC = () => {
 
     const init = () => {
       particles = [];
-      for (let i = 0; i < 1200; i++) {
-        particles.push(
-          new Particle(
-            Math.random() * window.innerWidth,
-            Math.random() * window.innerHeight
-          )
-        );
+      const particleCount = window.innerWidth < 768 ? 60 : 150; 
+      
+      for (let i = 0; i < particleCount; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        particles.push(new Particle(x, y));
       }
     };
 
@@ -93,9 +96,10 @@ const AntigravityBackground: React.FC = () => {
 
     resize();
     window.addEventListener("resize", resize);
-    window.addEventListener("mousemove", (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
-    });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
 
     const animate = () => {
       ctx.fillStyle = "#09090b";
@@ -104,75 +108,106 @@ const AntigravityBackground: React.FC = () => {
         p.update();
         p.draw(ctx);
       });
-      rafRef.current = requestAnimationFrame(animate);
+      animationFrameId = requestAnimationFrame(animate);
     };
 
     animate();
 
     return () => {
       window.removeEventListener("resize", resize);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("mousemove", handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full" />;
+  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none" />;
 };
 
 /* ===========================
-    Login Page
+   Login Component (Fixed)
    =========================== */
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+// 2. Removed destructuring ({ onLogin }) from props
+const Login: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Simulated API Logic
     setTimeout(() => {
-      onLogin();            // 🔥 updates App state
-      navigate("/dashboard"); // 🔥 redirect
-      setIsLoading(false);
-    }, 800);
+      // 3. Instead of calling onLogin(), we set a token in localStorage
+      localStorage.setItem("authToken", "demo-token-123");
+      
+      // Dispatch storage event so other tabs/components might react (optional)
+      window.dispatchEvent(new Event("storage"));
+
+      // 4. Redirect to Dashboard
+      navigate("/dashboard"); 
+    }, 1000);
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4 relative overflow-hidden">
       <AntigravityBackground />
 
-      <div className="relative z-10 w-full max-w-md bg-zinc-900/80 backdrop-blur-xl border border-zinc-800 p-8 rounded-2xl shadow-2xl">
+      <div className="relative z-10 w-full max-w-md bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 p-8 rounded-2xl shadow-2xl shadow-black/50">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-500/20 mb-4">
             R
           </div>
-          <h1 className="text-2xl font-bold text-white">Risk Engine</h1>
-          <p className="text-zinc-400 text-sm">
-            Sign in to manage project risks
+          <h1 className="text-2xl font-bold text-white tracking-tight">Welcome Back</h1>
+          <p className="text-zinc-400 text-sm mt-1">
+            Sign in to access the Risk Intelligence Platform
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <input
-            type="email"
-            placeholder="name@company.com"
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500"
-          />
-          <input
-            type="password"
-            placeholder="••••••••"
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-blue-500"
-          />
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-zinc-400 uppercase ml-1">Email</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@riskengine.ai"
+              className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-zinc-600"
+            />
+          </div>
+          
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-zinc-400 uppercase ml-1">Password</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder:text-zinc-600"
+            />
+          </div>
+
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold"
+            className="w-full py-3 mt-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
           >
-            {isLoading ? "Authenticating..." : "Sign In"}
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Authenticating...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-zinc-500 text-xs">
-          Secure Access Protocol • Risk Engine v1.0
+        <p className="mt-8 text-center text-zinc-600 text-xs font-mono">
+          SECURE ACCESS • v1.0.4
         </p>
       </div>
     </div>

@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// 1. Removed the interface LoginProps - we don't need it anymore!
-
 /* ===========================
    Interactive Background
    =========================== */
@@ -95,6 +93,7 @@ const AntigravityBackground: React.FC = () => {
     };
 
     resize();
+    
     window.addEventListener("resize", resize);
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
@@ -104,10 +103,12 @@ const AntigravityBackground: React.FC = () => {
     const animate = () => {
       ctx.fillStyle = "#09090b";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
       particles.forEach((p) => {
         p.update();
         p.draw(ctx);
       });
+      
       animationFrameId = requestAnimationFrame(animate);
     };
 
@@ -124,9 +125,8 @@ const AntigravityBackground: React.FC = () => {
 };
 
 /* ===========================
-   Login Component (Fixed)
+   Login Component
    =========================== */
-// 2. Removed destructuring ({ onLogin }) from props
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -137,24 +137,19 @@ const Login: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulated API Logic
+    // Simulated API Call
     setTimeout(() => {
-      // 3. Instead of calling onLogin(), we set a token in localStorage
-      localStorage.setItem("authToken", "demo-token-123");
-      
-      // Dispatch storage event so other tabs/components might react (optional)
-      window.dispatchEvent(new Event("storage"));
-
-      // 4. Redirect to Dashboard
-      navigate("/dashboard"); 
+      navigate("/dashboard");
     }, 1000);
   };
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4 relative overflow-hidden">
+      
       <AntigravityBackground />
 
       <div className="relative z-10 w-full max-w-md bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 p-8 rounded-2xl shadow-2xl shadow-black/50">
+        
         <div className="flex flex-col items-center mb-8">
           <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-500/20 mb-4">
             R

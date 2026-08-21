@@ -6,7 +6,7 @@ This system analyzes code changes, calculates weighted regression risk, and prio
 
 ---
 
-🚀 Tech Stack
+##🚀 Tech Stack
 
 ### 🔹 Backend
 - Django

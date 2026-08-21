@@ -1,38 +1,51 @@
-import { useState } from "react";
-import { 
-  Search, 
-  Plus, 
-  PlayCircle, 
-  CheckCircle2, 
-  XCircle, 
+import { useEffect, useState } from "react";
+import {
+  Search,
+  Plus,
+  PlayCircle,
+  CheckCircle2,
+  XCircle,
   AlertCircle,
-  MoreHorizontal
+  MoreHorizontal,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import clsx from "clsx";
-
-// --- MOCK DATA ---
-const MOCK_TESTS = [
-  { id: "TC-901", scenario: "User Login - Valid Credentials", project: "User Auth", duration: "1.2s", status: "Passed", lastRun: "10 mins ago" },
-  { id: "TC-902", scenario: "Process Refund Request", project: "Payment Gateway", duration: "4.5s", status: "Failed", lastRun: "12 mins ago" },
-  { id: "TC-903", scenario: "Password Reset Email Delivery", project: "Notification Worker", duration: "-", status: "Skipped", lastRun: "1 hour ago" },
-  { id: "TC-904", scenario: "Data Export - CSV Format", project: "Frontend Dashboard", duration: "2.1s", status: "Passed", lastRun: "2 hours ago" },
-  { id: "TC-905", scenario: "Reject Expired JWT Token", project: "User Auth", duration: "0.8s", status: "Passed", lastRun: "10 mins ago" },
-];
+import { api } from "../services/api";
+import type { Testcase } from "../types";
 
 export default function Testcases() {
+  const [testcases, setTestcases] = useState<Testcase[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("All");
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredTests = MOCK_TESTS.filter(tc => {
-    const matchesSearch = tc.scenario.toLowerCase().includes(searchTerm.toLowerCase());
+  useEffect(() => {
+    const fetchTestcases = async () => {
+      try {
+        setIsLoading(true);
+        const res = await api.get("/testcases/");
+        setTestcases(Array.isArray(res.data) ? res.data : []);
+      } catch (error) {
+        console.error("Failed to load testcases", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTestcases();
+  }, []);
+
+  const filteredTests = testcases.filter((tc) => {
+    const query = searchTerm.toLowerCase();
+    const matchesSearch =
+      tc.title.toLowerCase().includes(query) ||
+      String(tc.id).toLowerCase().includes(query);
     const matchesFilter = filter === "All" || tc.status === filter;
     return matchesSearch && matchesFilter;
   });
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12 p-6">
-      
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -65,22 +78,22 @@ export default function Testcases() {
             className="w-full bg-zinc-900 border border-zinc-800 text-zinc-200 pl-10 pr-4 py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all placeholder:text-zinc-600"
           />
         </div>
-        
+
         <div className="flex items-center gap-2 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
-           {["All", "Passed", "Failed", "Skipped"].map(status => (
-               <button
-                 key={status}
-                 onClick={() => setFilter(status)}
-                 className={clsx(
-                   "px-4 py-1.5 text-xs font-medium rounded-md transition-all",
-                   filter === status 
-                     ? "bg-zinc-800 text-white shadow-sm" 
-                     : "text-zinc-500 hover:text-zinc-300"
-                 )}
-               >
-                 {status}
-               </button>
-           ))}
+          {["All", "Pending", "Passed", "Failed"].map((status) => (
+            <button
+              key={status}
+              onClick={() => setFilter(status)}
+              className={clsx(
+                "px-4 py-1.5 text-xs font-medium rounded-md transition-all",
+                filter === status
+                  ? "bg-zinc-800 text-white shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              )}
+            >
+              {status}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -98,41 +111,61 @@ export default function Testcases() {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800/50">
-            {filteredTests.map((tc, index) => (
-              <motion.tr 
-                key={tc.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="group hover:bg-zinc-800/30 transition-colors"
-              >
-                <td className="px-6 py-4 font-mono text-xs text-zinc-400">{tc.id}</td>
-                <td className="px-6 py-4 text-sm font-medium text-zinc-200">{tc.scenario}</td>
-                <td className="px-6 py-4 text-xs text-zinc-400">{tc.project}</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-1.5">
-                    {tc.status === "Passed" && <CheckCircle2 size={16} className="text-emerald-500" />}
-                    {tc.status === "Failed" && <XCircle size={16} className="text-rose-500" />}
-                    {tc.status === "Skipped" && <AlertCircle size={16} className="text-yellow-500" />}
-                    <span className={clsx(
-                      "text-xs font-medium",
-                      tc.status === "Passed" ? "text-emerald-400" :
-                      tc.status === "Failed" ? "text-rose-400" : "text-yellow-400"
-                    )}>{tc.status}</span>
-                  </div>
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-10 text-center text-zinc-500">
+                  Loading testcases...
                 </td>
-                <td className="px-6 py-4 text-xs text-zinc-500">{tc.duration}</td>
-                <td className="px-6 py-4 text-right">
-                  <button className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg">
-                    <MoreHorizontal size={16} />
-                  </button>
+              </tr>
+            ) : filteredTests.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-10 text-center text-zinc-500">
+                  No testcases matched your current filters.
                 </td>
-              </motion.tr>
-            ))}
+              </tr>
+            ) : (
+              filteredTests.map((tc, index) => (
+                <motion.tr
+                  key={tc.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="group hover:bg-zinc-800/30 transition-colors"
+                >
+                  <td className="px-6 py-4 font-mono text-xs text-zinc-400">{tc.id}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-zinc-200">{tc.title}</td>
+                  <td className="px-6 py-4 text-xs text-zinc-400">Project #{tc.project}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1.5">
+                      {tc.status === "Passed" && <CheckCircle2 size={16} className="text-emerald-500" />}
+                      {tc.status === "Failed" && <XCircle size={16} className="text-rose-500" />}
+                      {tc.status === "Pending" && <AlertCircle size={16} className="text-yellow-500" />}
+                      <span
+                        className={clsx(
+                          "text-xs font-medium",
+                          tc.status === "Passed"
+                            ? "text-emerald-400"
+                            : tc.status === "Failed"
+                            ? "text-rose-400"
+                            : "text-yellow-400"
+                        )}
+                      >
+                        {tc.status}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-xs text-zinc-500">-</td>
+                  <td className="px-6 py-4 text-right">
+                    <button className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 rounded-lg">
+                      <MoreHorizontal size={16} />
+                    </button>
+                  </td>
+                </motion.tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
-
     </div>
   );
 }

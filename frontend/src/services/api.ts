@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -35,9 +35,12 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem("refresh_token");
         
         // Call your Django refresh endpoint
-        const response = await axios.post("http://127.0.0.1:8000/api/token/refresh/", {
-          refresh: refreshToken,
-        });
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000/api"}/token/refresh/`,
+          {
+            refresh: refreshToken,
+          }
+        );
 
         const { access } = response.data;
 

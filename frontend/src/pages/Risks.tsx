@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import type { Risk } from "../types";
 import {
   Search,
@@ -8,6 +8,7 @@ import {
   ShieldAlert,
   Filter,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
@@ -24,7 +25,7 @@ export default function Risks() {
     try {
       setIsLoading(true);
       const res = await api.get("/risks/");
-      setRisks(res.data);
+      setRisks(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Failed to load risks", error);
     } finally {
@@ -127,9 +128,12 @@ export default function Risks() {
                     </td>
                   </tr>
                 ) : (
-                  filteredRisks.map((risk) => (
-                    <tr
+                  filteredRisks.map((risk, index) => (
+                    <motion.tr
                       key={risk.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
                       className="hover:bg-zinc-800/40 transition-colors group"
                     >
                       <td className="px-6 py-5">
@@ -188,7 +192,7 @@ export default function Risks() {
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))
                 )}
               </tbody>

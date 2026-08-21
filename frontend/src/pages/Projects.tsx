@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { api } from "../services/api";
 import type { Project } from "../types";
 import { Plus, Trash2, FolderOpen, Calendar } from "lucide-react";
@@ -25,7 +25,7 @@ export default function Projects() {
     fetchProjects();
   }, []);
 
-  const createProject = async (e: React.FormEvent) => {
+  const createProject = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!title) return;
 

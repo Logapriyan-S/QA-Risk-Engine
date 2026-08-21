@@ -19,12 +19,12 @@ export default function Dashboard() {
     risks: 0,
     testcases: 0,
   });
-
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        setLoading(true);
         const [projectsRes, risksRes, testcasesRes] = await Promise.all([
           api.get("/projects/"),
           api.get("/risks/"),
@@ -32,9 +32,9 @@ export default function Dashboard() {
         ]);
 
         setStats({
-          projects: projectsRes.data.length,
-          risks: risksRes.data.length,
-          testcases: testcasesRes.data.length,
+          projects: Array.isArray(projectsRes.data) ? projectsRes.data.length : 0,
+          risks: Array.isArray(risksRes.data) ? risksRes.data.length : 0,
+          testcases: Array.isArray(testcasesRes.data) ? testcasesRes.data.length : 0,
         });
       } catch (error) {
         console.error("Failed to load dashboard stats", error);
@@ -60,9 +60,7 @@ export default function Dashboard() {
         <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
           {title}
         </p>
-        <h2 className="text-3xl font-bold mt-2">
-          {loading ? "—" : value}
-        </h2>
+        <h2 className="text-3xl font-bold mt-2">{loading ? "-" : value}</h2>
       </div>
 
       <div className="p-3 rounded-xl bg-zinc-800">
@@ -83,31 +81,12 @@ export default function Dashboard() {
 
       {/* KPI Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <Card
-          title="Total Projects"
-          value={stats.projects}
-          Icon={FolderKanban}
-        />
-        <Card
-          title="Active Risks"
-          value={stats.risks}
-          Icon={AlertTriangle}
-        />
-        <Card
-          title="Test Scenarios"
-          value={stats.testcases}
-          Icon={ClipboardCheck}
-        />
+        <Card title="Total Projects" value={stats.projects} Icon={FolderKanban} />
+        <Card title="Active Risks" value={stats.risks} Icon={AlertTriangle} />
+        <Card title="Test Scenarios" value={stats.testcases} Icon={ClipboardCheck} />
         <Card
           title="System Health"
-          value={
-            loading
-              ? "—"
-              : `${Math.max(
-                  0,
-                  100 - stats.risks
-                )}%`
-          }
+          value={loading ? "-" : `${Math.max(0, 100 - stats.risks)}%`}
           Icon={Activity}
         />
       </div>
